@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import pickle
 import shap
 import os
+import uuid
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -17,6 +18,11 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
+def get_session_id():
+    if "session_id" not in st.session_state:
+        st.session_state["session_id"] = str(uuid.uuid4())
+    return st.session_state["session_id"]
+
 def save_prediction(data: dict):
     try:
         sb = get_supabase()
@@ -26,10 +32,12 @@ def save_prediction(data: dict):
         st.error(f"Database error: {e}")
         return False
 
-def load_all_predictions():
+def load_my_predictions(session_id: str):
     try:
         sb = get_supabase()
-        res = sb.table("predictions").select("*").order("created_at", desc=True).execute()
+        res = sb.table("predictions").select("*")\
+            .eq("session_id", session_id)\
+            .order("created_at", desc=True).execute()
         return pd.DataFrame(res.data) if res.data else pd.DataFrame()
     except Exception as e:
         st.error(f"Could not load predictions: {e}")
@@ -219,9 +227,7 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
 }
 
 /* ── BOTTOM NAV BAR (mobile only) ── */
-.mobile-nav {
-    display: none;
-}
+.mobile-nav { display: none; }
 @media (max-width: 768px) {
     .mobile-nav {
         display: flex !important;
@@ -245,21 +251,15 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
         justify-content: center;
         color: #636366;
         text-decoration: none;
-        font-size: 10px;
-        font-weight: 500;
-        gap: 3px;
         flex: 1;
         padding: 6px 2px;
         border-radius: 10px;
         transition: all 0.15s;
         min-height: 44px;
     }
-    .mobile-nav a.active {
-        color: #ffffff;
-        background: rgba(255,255,255,0.1);
-    }
+    .mobile-nav a.active { color: #ffffff; background: rgba(255,255,255,0.1); }
     .mobile-nav a span.icon { font-size: 20px; line-height: 1; }
-    .mobile-nav a span.label { font-size: 9px; letter-spacing: 0.02em; }
+    .mobile-nav a span.label { font-size: 9px; letter-spacing: 0.02em; margin-top: 3px; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -319,12 +319,12 @@ def get_sport_explanation(sport, acwr, fatigue_level, stress_level, sleep_hours,
         "Football":      f"Football combines explosive anaerobic sprints with sustained aerobic endurance. Your ACWR of {acwr} is {'particularly dangerous — hamstring and ACL risk spikes with workload surges' if acwr > 1.3 else 'within manageable limits, but monitor fatigue closely'}.",
         "Basketball":    f"Basketball demands explosive jumping and rapid cutting. Your fatigue level of {fatigue_level}/10 {'significantly increases landing injury risk' if fatigue_level >= 7 else 'is manageable but monitor during high-intensity play'}.",
         "Rugby":         f"Rugby combines aerobic output with explosive contact events. Your ACWR of {acwr} combined with {'high' if fatigue_level >= 7 else 'moderate'} fatigue creates elevated vulnerability to both contact and non-contact injuries.",
-        "MMA":           f"MMA places the highest physiological demand of any sport. Your stress of {stress_level}/10 and fatigue of {fatigue_level}/10 — {'overtraining risk is very high' if stress_level >= 7 or fatigue_level >= 7 else 'currently manageable but recovery must be prioritised'}.",
+        "MMA":           f"MMA places the highest physiological demand of any sport. Stress {stress_level}/10 and fatigue {fatigue_level}/10 — {'overtraining risk is very high' if stress_level >= 7 or fatigue_level >= 7 else 'currently manageable but recovery must be prioritised'}.",
         "Running":       f"Running injury risk is driven by repetitive stress. Your ACWR of {acwr} — {'reduce mileage immediately to prevent stress fracture risk' if acwr > 1.3 else 'workload progression is within safe limits'}.",
         "Cycling":       f"Cycling generates high repetitive joint loading. Your sleep of {sleep_hours}h per night {'is below the recovery threshold' if sleep_hours < 7 else 'is adequate to support your training load'}.",
-        "Swimming":      f"Swimming generates high repetitive shoulder loading. Your {session_duration} minute sessions {'is very high — shoulder fatigue risk is elevated' if intensity >= 8 else 'is appropriate if technique is maintained throughout'}.",
-        "Weightlifting": f"Weightlifting fibres are highly susceptible to tears without adequate recovery. Fatigue of {fatigue_level}/10 {'significantly increases acute tear risk' if fatigue_level >= 7 else 'is manageable but avoid true maximal attempts'}.",
-        "Sprinting":     f"Sprinting generates enormous tensile force through the hamstring complex. ACWR of {acwr} with fatigue {fatigue_level}/10 — {'very high risk for hamstring injury, reduce sprint volume immediately' if acwr > 1.3 or fatigue_level >= 7 else 'manageable — maintain warm-up protocols'}.",
+        "Swimming":      f"Swimming generates high repetitive shoulder loading. Your {session_duration} minute sessions {'is very high — shoulder fatigue risk elevated' if intensity >= 8 else 'is appropriate if technique is maintained throughout'}.",
+        "Weightlifting": f"Weightlifting fibres are highly susceptible to tears without adequate recovery. Fatigue {fatigue_level}/10 {'significantly increases acute tear risk' if fatigue_level >= 7 else 'is manageable but avoid true maximal attempts'}.",
+        "Sprinting":     f"Sprinting generates enormous tensile force through the hamstring complex. ACWR {acwr} with fatigue {fatigue_level}/10 — {'very high risk for hamstring injury, reduce sprint volume immediately' if acwr > 1.3 or fatigue_level >= 7 else 'manageable — maintain warm-up protocols'}.",
         "Gymnastics":    f"Gymnastics places high stress on fast-twitch fibres and connective tissue. Stress {stress_level}/10 — {'psychological stress significantly impairs coordination' if stress_level >= 6 else 'psychological readiness is adequate for training'}.",
     }
     return explanations.get(sport, "")
@@ -351,31 +351,28 @@ def divider():
     st.markdown('<div class="vt-divider"></div>', unsafe_allow_html=True)
 
 
-# ── PAGE STATE ────────────────────────────────────────────────────────────────
+# ── PAGE STATE ─────────────────────────────────────────────────────────────────
 if 'page' not in st.session_state:
     st.session_state.page = "Home"
 
-# ── MOBILE BOTTOM NAV (injected via HTML, uses query param to navigate) ───────
-pages = ["Home", "Risk Assessment", "My Results", "Analytics", "About"]
+pages  = ["Home", "Risk Assessment", "My Results", "Analytics", "About"]
 icons  = ["🏠", "⚡", "📊", "📈", "ℹ️"]
 labels = ["Home", "Assess", "Results", "Analytics", "About"]
 
-# Read page from query params (set by bottom nav clicks)
 qp = st.query_params
 if "p" in qp:
-    requested = qp["p"]
+    requested = qp["p"].replace("+", " ")
     if requested in pages:
         st.session_state.page = requested
 
-# Build bottom nav HTML
 nav_items = ""
 for pg, icon, label in zip(pages, icons, labels):
     active = "active" if st.session_state.page == pg else ""
-    nav_items += f'<a href="?p={pg.replace(" ", "+")}" class="{active}"><span class="icon">{icon}</span><span class="label">{label}</span></a>'
+    nav_items += f'<a href="?p={pg.replace(" ","+")}" class="{active}"><span class="icon">{icon}</span><span class="label">{label}</span></a>'
 
 st.markdown(f'<div class="mobile-nav">{nav_items}</div>', unsafe_allow_html=True)
 
-# ── DESKTOP SIDEBAR ───────────────────────────────────────────────────────────
+# ── DESKTOP SIDEBAR ────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
     <div style="padding:28px 20px 16px;">
@@ -410,18 +407,11 @@ page = st.session_state.page
 if page == "Home":
     st.markdown("""
     <div style="background:#ffffff;padding:28px 24px;margin:-32px -32px 0 -32px;border-radius:0 0 20px 20px;">
-        <div style="font-size:12px;font-weight:700;color:#0071e3;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">
-            BDA6 Capstone · Polytechnics Mauritius
-        </div>
-        <div style="font-size:34px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;line-height:1.1;margin-bottom:10px;">
-            Predict your injury risk before it happens.
-        </div>
-        <div style="font-size:15px;color:#6e6e73;line-height:1.7;">
-            Simple questions. Real-time machine learning. Personalised risk score.
-        </div>
+        <div style="font-size:12px;font-weight:700;color:#0071e3;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">BDA6 Capstone · Polytechnics Mauritius</div>
+        <div style="font-size:34px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;line-height:1.1;margin-bottom:10px;">Predict your injury risk before it happens.</div>
+        <div style="font-size:15px;color:#6e6e73;line-height:1.7;">Simple questions. Real-time machine learning. Personalised risk score.</div>
     </div>
     """, unsafe_allow_html=True)
-
     st.markdown("<br>", unsafe_allow_html=True)
 
     stats = load_dataset_stats()
@@ -432,7 +422,6 @@ if page == "Home":
                 <div style="font-size:24px;font-weight:800;color:{color};">{val}</div>
                 <div style="font-size:11px;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:0.07em;margin-top:4px;">{label}</div>
             </div>""", unsafe_allow_html=True)
-
     c1, c2 = st.columns(2)
     for col, (val, label) in zip([c1,c2],[(f"{stats.get('total_records',1000):,}","Athletes analysed"),(f"{stats.get('num_features',19)}","Risk factors")]):
         with col:
@@ -464,6 +453,20 @@ if page == "Home":
         st.markdown(f"""<div style="background:#ffffff;border-radius:14px;padding:16px;box-shadow:0 1px 8px rgba(0,0,0,0.07);border-left:4px solid {color};margin-bottom:10px;">
             <div style="font-size:26px;font-weight:800;color:{color};line-height:1;">{stat}</div>
             <div style="font-size:13px;color:#6e6e73;line-height:1.6;margin-top:4px;">{desc}</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    section_label("How it works")
+    for num, t, d in [
+        ("01","Tell us about yourself","Age, sport, height, weight — questions anyone can answer"),
+        ("02","Describe your training","How often, how long, how hard — in plain language"),
+        ("03","Get your score","XGBoost gives you a personalised injury risk percentage"),
+        ("04","Take action","See exactly what is raising your risk and what to change"),
+    ]:
+        st.markdown(f"""<div style="background:#ffffff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 8px rgba(0,0,0,0.07);margin-bottom:10px;display:flex;align-items:center;gap:14px;">
+            <div style="font-size:20px;font-weight:800;color:#0071e3;min-width:32px;">{num}</div>
+            <div><div style="font-size:14px;font-weight:700;color:#1d1d1f;margin-bottom:2px;">{t}</div>
+            <div style="font-size:12px;color:#aeaeb2;line-height:1.5;">{d}</div></div>
         </div>""", unsafe_allow_html=True)
 
 
@@ -601,8 +604,11 @@ elif page == "Risk Assessment":
         rec_texts = [f"{r[1]}: {r[2]}" for r in recs[:3]]
         while len(rec_texts) < 3: rec_texts.append("")
 
+        session_id = get_session_id()
+
         save_prediction({
             "name": str(name) if name else "Anonymous",
+            "session_id": session_id,
             "age": int(age), "sex": int(sex_val), "sport": str(sport),
             "sport_category": str(sport_profiles.get(sport, {}).get("category", "")),
             "bmi": float(round(bmi, 1)), "experience_years": int(experience),
@@ -629,7 +635,8 @@ elif page == "Risk Assessment":
 
         bar_colors = [color if v > 0 else "#22c55e" for v in shap_df['shap']]
         fig = go.Figure(go.Bar(x=shap_df['shap'], y=shap_df['label'], orientation='h',
-                               marker_color=bar_colors, marker_line_width=0))
+                               marker_color=bar_colors, marker_line_width=0,
+                               hovertemplate="%{y}: %{x:.3f}<extra></extra>"))
         fig.update_layout(**pt(), height=260,
                          title=dict(text="What is driving your risk", font_size=13, x=0),
                          xaxis=dict(title="Impact", zeroline=True, zerolinecolor="#e5e5ea"),
@@ -650,6 +657,7 @@ elif page == "Risk Assessment":
                 <div style="font-size:12px;font-weight:700;color:#0071e3;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">{profile['icon']} {sport} — Injury Profile</div>
                 <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
                     <span style="background:rgba(255,255,255,0.08);color:#ffffff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:100px;">{profile['category']}</span>
+                    <span style="background:rgba(255,255,255,0.08);color:#ffffff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:100px;">{profile['muscle']}</span>
                 </div>
                 <div style="font-size:11px;font-weight:600;color:#ff6b6b;margin-bottom:8px;">{profile['risks']}</div>
                 <div style="font-size:13px;color:#aeaeb2;line-height:1.8;">{explanation}</div>
@@ -668,11 +676,18 @@ elif page == "Risk Assessment":
 elif page == "My Results":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">My Results</div>
-        <div style="font-size:14px;color:#6e6e73;margin-top:4px;">All predictions stored in Supabase.</div>
+        <div style="font-size:14px;color:#6e6e73;margin-top:4px;">Your personal predictions — private to this device.</div>
     </div>""", unsafe_allow_html=True)
     divider()
 
-    preds = load_all_predictions()
+    session_id = get_session_id()
+    preds = load_my_predictions(session_id)
+
+    st.markdown("""<div style="background:#f5f5f7;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:18px;">🔒</span>
+        <span style="font-size:13px;color:#6e6e73;line-height:1.5;">Your results are private to this browser session. No other user can see your data.</span>
+    </div>""", unsafe_allow_html=True)
+
     if preds.empty:
         st.markdown("""<div style="background:#ffffff;border-radius:20px;padding:48px 24px;text-align:center;box-shadow:0 1px 8px rgba(0,0,0,0.06);">
             <div style="font-size:40px;margin-bottom:12px;">📊</div>
@@ -686,7 +701,7 @@ elif page == "My Results":
         low_risk = len(preds[preds['risk_percentage'] < 25])
 
         c1, c2 = st.columns(2)
-        for col, (val, label, color) in zip([c1,c2],[(total,"Total","#1d1d1f"),(f"{avg_risk}%","Avg Risk","#f59e0b" if avg_risk>=25 else "#22c55e")]):
+        for col, (val, label, color) in zip([c1,c2],[(total,"My Assessments","#1d1d1f"),(f"{avg_risk}%","Avg Risk","#f59e0b" if avg_risk>=25 else "#22c55e")]):
             with col:
                 st.markdown(f"""<div style="background:#ffffff;border-radius:14px;padding:16px;box-shadow:0 1px 8px rgba(0,0,0,0.07);margin-bottom:10px;">
                     <div style="font-size:26px;font-weight:800;color:{color};">{val}</div>
@@ -700,16 +715,20 @@ elif page == "My Results":
                     <div style="font-size:11px;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:0.07em;margin-top:4px;">{label}</div>
                 </div>""", unsafe_allow_html=True)
 
-        fig = go.Figure(go.Histogram(x=preds['risk_percentage'], nbinsx=20, marker_color="#0071e3", marker_line_width=0))
-        fig.update_layout(**pt(), title="Risk score distribution", height=240, xaxis_title="Risk Score (%)", yaxis_title="Count")
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        if total > 1:
+            fig = go.Figure(go.Histogram(x=preds['risk_percentage'], nbinsx=10,
+                marker_color="#0071e3", marker_line_width=0))
+            fig.update_layout(**pt(), title="Your risk score history", height=240,
+                             xaxis_title="Risk Score (%)", yaxis_title="Count")
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-        section_label("All predictions")
-        display_cols = ['name','sport','acwr','sleep_hours','risk_percentage','risk_level']
+        section_label("Your prediction history")
+        display_cols = ['created_at','sport','acwr','sleep_hours','risk_percentage','risk_level','recommendation_1']
         available = [c for c in display_cols if c in preds.columns]
-        st.dataframe(preds[available].head(50).rename(columns={
-            'name':'Name','sport':'Sport','acwr':'ACWR','sleep_hours':'Sleep',
-            'risk_percentage':'Risk %','risk_level':'Level',
+        st.dataframe(preds[available].rename(columns={
+            'created_at':'Date','sport':'Sport','acwr':'ACWR',
+            'sleep_hours':'Sleep','risk_percentage':'Risk %',
+            'risk_level':'Level','recommendation_1':'Top Recommendation'
         }), use_container_width=True, hide_index=True)
 
 
@@ -760,6 +779,17 @@ elif page == "Analytics":
             for col in ['accuracy','precision_score','recall','f1_score','roc_auc']:
                 if col in mdf.columns and mdf[col].max() <= 1.0:
                     mdf[col] = mdf[col] * 100
+
+        fig = go.Figure()
+        for i, row in mdf.iterrows():
+            fig.add_trace(go.Bar(name=row['model_name'],
+                x=['Accuracy','Precision','Recall','F1','ROC-AUC'],
+                y=[row['accuracy'],row.get('precision_score',0),row.get('recall',0),row['f1_score'],row['roc_auc']],
+                marker_color=["#d1d1d6","#8e8e93","#0071e3"][i%3], marker_line_width=0))
+        fig.update_layout(**pt(), barmode='group', height=300, title="Model comparison",
+                         yaxis=dict(range=[50,100],title="Score (%)"),
+                         legend=dict(orientation="h",y=1.1,x=0.5,xanchor="center"))
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
         for _, row in mdf.iterrows():
             best = row['model_name'] == 'XGBoost'
