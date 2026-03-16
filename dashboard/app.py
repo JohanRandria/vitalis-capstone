@@ -202,7 +202,7 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
 }
 .vt-divider { height: 1px; background: #e8e8e8; margin: 20px 0; }
 
-/* ── MOBILE: hide sidebar, show bottom nav ── */
+/* ── MOBILE: hide sidebar ── */
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
         display: none !important;
@@ -216,7 +216,7 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         padding-top: 1rem !important;
-        padding-bottom: 80px !important;
+        padding-bottom: 88px !important;
     }
     .stButton > button { min-height: 56px !important; font-size: 17px !important; }
     .stSelectbox > div > div,
@@ -226,40 +226,38 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
     .vt-divider { margin: 16px 0; }
 }
 
-/* ── BOTTOM NAV BAR (mobile only) ── */
-.mobile-nav { display: none; }
+/* ── MOBILE BOTTOM NAV ── */
+.mobile-bottom-nav { display: none; }
 @media (max-width: 768px) {
-    .mobile-nav {
-        display: flex !important;
+    .mobile-bottom-nav {
+        display: block !important;
         position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 64px;
+        bottom: 0; left: 0; right: 0;
+        z-index: 9999;
         background: #1d1d1f;
         border-top: 1px solid #3a3a3c;
-        z-index: 9999;
-        align-items: center;
-        justify-content: space-around;
-        padding: 0 4px;
+        padding: 4px 0;
         padding-bottom: env(safe-area-inset-bottom);
     }
-    .mobile-nav a {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #636366;
-        text-decoration: none;
-        flex: 1;
-        padding: 6px 2px;
-        border-radius: 10px;
-        transition: all 0.15s;
-        min-height: 44px;
+    /* Override the default black button style for nav only */
+    .mobile-bottom-nav .stButton > button {
+        background: transparent !important;
+        border: none !important;
+        color: #636366 !important;
+        font-size: 9px !important;
+        font-weight: 500 !important;
+        padding: 4px 2px !important;
+        min-height: 52px !important;
+        border-radius: 10px !important;
+        width: 100% !important;
+        line-height: 1.4 !important;
+        box-shadow: none !important;
+        letter-spacing: 0 !important;
     }
-    .mobile-nav a.active { color: #ffffff; background: rgba(255,255,255,0.1); }
-    .mobile-nav a span.icon { font-size: 20px; line-height: 1; }
-    .mobile-nav a span.label { font-size: 9px; letter-spacing: 0.02em; margin-top: 3px; }
+    .mobile-bottom-nav .stButton > button:hover {
+        background: rgba(255,255,255,0.08) !important;
+        color: #ffffff !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -356,27 +354,29 @@ if 'page' not in st.session_state:
     st.session_state.page = "Home"
 
 pages  = ["Home", "Risk Assessment", "My Results", "Analytics", "About"]
-icons  = ["🏠", "⚡", "📊", "📈", "ℹ️"]
-labels = ["Home", "Assess", "Results", "Analytics", "About"]
 
-qp = st.query_params
-if "p" in qp:
-    requested = qp["p"].replace("+", " ")
-    if requested in pages:
-        st.session_state.page = requested
-
-nav_items = ""
-for pg, icon, label in zip(pages, icons, labels):
-    active = "active" if st.session_state.page == pg else ""
-    nav_items += f'<a href="?p={pg.replace(" ","+")}" class="{active}"><span class="icon">{icon}</span><span class="label">{label}</span></a>'
-
-st.markdown(f'<div class="mobile-nav">{nav_items}</div>', unsafe_allow_html=True)
+# ── MOBILE BOTTOM NAV — session state only, no href, no page reload ────────────
+st.markdown('<div class="mobile-bottom-nav">', unsafe_allow_html=True)
+nav_cols = st.columns(5)
+nav_data = [
+    ("🏠\nHome",      "Home"),
+    ("⚡\nAssess",    "Risk Assessment"),
+    ("📊\nResults",   "My Results"),
+    ("📈\nAnalytics", "Analytics"),
+    ("ℹ️\nAbout",     "About"),
+]
+for col, (label, pg) in zip(nav_cols, nav_data):
+    with col:
+        if st.button(label, key=f"mob_{pg}", use_container_width=True):
+            st.session_state.page = pg
+            st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ── DESKTOP SIDEBAR ────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
     <div style="padding:28px 20px 16px;">
-        <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;"> Vitalis</div>
+        <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">⚡ Vitalis</div>
         <div style="font-size:11px;color:#6e6e73;margin-top:3px;letter-spacing:0.02em;text-transform:uppercase;">Injury Risk System</div>
     </div>
     <div style="height:1px;background:#3a3a3c;margin:0 20px 8px;"></div>
@@ -401,9 +401,9 @@ with st.sidebar:
 page = st.session_state.page
 
 
-
+# ══════════════════════════════════════════════════════════════════════════════
 # HOME
-
+# ══════════════════════════════════════════════════════════════════════════════
 if page == "Home":
     st.markdown("""
     <div style="background:#ffffff;padding:28px 24px;margin:-32px -32px 0 -32px;border-radius:0 0 20px 20px;">
@@ -470,9 +470,9 @@ if page == "Home":
         </div>""", unsafe_allow_html=True)
 
 
-
+# ══════════════════════════════════════════════════════════════════════════════
 # RISK ASSESSMENT
-
+# ══════════════════════════════════════════════════════════════════════════════
 elif page == "Risk Assessment":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">Risk Assessment</div>
@@ -605,7 +605,6 @@ elif page == "Risk Assessment":
         while len(rec_texts) < 3: rec_texts.append("")
 
         session_id = get_session_id()
-
         save_prediction({
             "name": str(name) if name else "Anonymous",
             "session_id": session_id,
@@ -670,9 +669,9 @@ elif page == "Risk Assessment":
         </div>""", unsafe_allow_html=True)
 
 
-
+# ══════════════════════════════════════════════════════════════════════════════
 # MY RESULTS
-
+# ══════════════════════════════════════════════════════════════════════════════
 elif page == "My Results":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">My Results</div>
@@ -732,9 +731,9 @@ elif page == "My Results":
         }), use_container_width=True, hide_index=True)
 
 
-
+# ══════════════════════════════════════════════════════════════════════════════
 # ANALYTICS
-
+# ══════════════════════════════════════════════════════════════════════════════
 elif page == "Analytics":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">Analytics</div>
@@ -820,9 +819,9 @@ elif page == "Analytics":
         </div>""", unsafe_allow_html=True)
 
 
-
+# ══════════════════════════════════════════════════════════════════════════════
 # ABOUT
-
+# ══════════════════════════════════════════════════════════════════════════════
 elif page == "About":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">About Vitalis</div>
