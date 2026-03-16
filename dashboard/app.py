@@ -202,6 +202,24 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
 }
 .vt-divider { height: 1px; background: #e8e8e8; margin: 20px 0; }
 
+/* ── DESKTOP: hide mobile nav completely ── */
+@media (min-width: 769px) {
+    .mobile-nav-container {
+        display: none !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        visibility: hidden !important;
+    }
+    .mobile-nav-container * {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
+
 /* ── MOBILE: hide sidebar ── */
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
@@ -224,23 +242,23 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
     .stTextInput > div > div > input { min-height: 52px !important; }
     .vt-section { margin-top: 16px; }
     .vt-divider { margin: 16px 0; }
-}
 
-/* ── MOBILE BOTTOM NAV ── */
-.mobile-bottom-nav { display: none; }
-@media (max-width: 768px) {
-    .mobile-bottom-nav {
+    /* ── MOBILE BOTTOM NAV ── */
+    .mobile-nav-container {
         display: block !important;
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        z-index: 9999;
-        background: #1d1d1f;
-        border-top: 1px solid #3a3a3c;
-        padding: 4px 0;
-        padding-bottom: env(safe-area-inset-bottom);
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 9999 !important;
+        background: #1d1d1f !important;
+        border-top: 1px solid #3a3a3c !important;
+        padding: 4px 0 !important;
+        padding-bottom: env(safe-area-inset-bottom) !important;
+        height: auto !important;
+        visibility: visible !important;
     }
-    /* Override the default black button style for nav only */
-    .mobile-bottom-nav .stButton > button {
+    .mobile-nav-container .stButton > button {
         background: transparent !important;
         border: none !important;
         color: #636366 !important;
@@ -254,7 +272,7 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
         box-shadow: none !important;
         letter-spacing: 0 !important;
     }
-    .mobile-bottom-nav .stButton > button:hover {
+    .mobile-nav-container .stButton > button:hover {
         background: rgba(255,255,255,0.08) !important;
         color: #ffffff !important;
     }
@@ -353,10 +371,11 @@ def divider():
 if 'page' not in st.session_state:
     st.session_state.page = "Home"
 
-pages  = ["Home", "Risk Assessment", "My Results", "Analytics", "About"]
+pages = ["Home", "Risk Assessment", "My Results", "Analytics", "About"]
 
-# ── MOBILE BOTTOM NAV — session state only, no href, no page reload ────────────
-st.markdown('<div class="mobile-bottom-nav">', unsafe_allow_html=True)
+# ── MOBILE BOTTOM NAV ─────────────────────────────────────────────────────────
+# Wrapped in mobile-nav-container — hidden on desktop via CSS, visible on mobile
+st.markdown('<div class="mobile-nav-container">', unsafe_allow_html=True)
 nav_cols = st.columns(5)
 nav_data = [
     ("🏠\nHome",      "Home"),
