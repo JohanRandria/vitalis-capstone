@@ -202,7 +202,7 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
 }
 .vt-divider { height: 1px; background: #e8e8e8; margin: 20px 0; }
 
-/* ── MOBILE ── */
+/* ── MOBILE: hide sidebar, show bottom nav ── */
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
         display: none !important;
@@ -216,7 +216,7 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         padding-top: 1rem !important;
-        padding-bottom: 88px !important;
+        padding-bottom: 80px !important;
     }
     .stButton > button { min-height: 56px !important; font-size: 17px !important; }
     .stSelectbox > div > div,
@@ -226,41 +226,41 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
     .vt-divider { margin: 16px 0; }
 }
 
-/* ── MOBILE BOTTOM NAV ── shown only on mobile via JS injection ── */
-#mobile-nav-bar {
-    display: none;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 64px;
-    background: #1d1d1f;
-    border-top: 1px solid #3a3a3c;
-    z-index: 9999;
-    align-items: center;
-    justify-content: space-around;
-    padding-bottom: env(safe-area-inset-bottom);
+/* ── BOTTOM NAV BAR (mobile only) ── */
+.mobile-nav { display: none; }
+@media (max-width: 768px) {
+    .mobile-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: #1d1d1f;
+        border-top: 1px solid #3a3a3c;
+        z-index: 9999;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 4px;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    .mobile-nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #636366;
+        text-decoration: none;
+        flex: 1;
+        padding: 6px 2px;
+        border-radius: 10px;
+        transition: all 0.15s;
+        min-height: 44px;
+    }
+    .mobile-nav a.active { color: #ffffff; background: rgba(255,255,255,0.1); }
+    .mobile-nav a span.icon { font-size: 20px; line-height: 1; }
+    .mobile-nav a span.label { font-size: 9px; letter-spacing: 0.02em; margin-top: 3px; }
 }
-#mobile-nav-bar a {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #636366;
-    text-decoration: none;
-    flex: 1;
-    padding: 6px 2px;
-    border-radius: 10px;
-    min-height: 44px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 9px;
-    font-weight: 500;
-    gap: 3px;
-    transition: all 0.15s;
-    border: none;
-    background: none;
-}
-#mobile-nav-bar a.active { color: #ffffff; background: rgba(255,255,255,0.1); }
-#mobile-nav-bar a span.nav-icon { font-size: 20px; line-height: 1; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -355,63 +355,28 @@ def divider():
 if 'page' not in st.session_state:
     st.session_state.page = "Home"
 
-pages = ["Home", "Risk Assessment", "My Results", "Analytics", "About"]
+pages  = ["Home", "Risk Assessment", "My Results", "Analytics", "About"]
+icons  = ["🏠", "⚡", "📊", "📈", "ℹ️"]
+labels = ["Home", "Assess", "Results", "Analytics", "About"]
 
-# ── MOBILE BOTTOM NAV — pure HTML/JS, zero Streamlit elements ─────────────────
-# Only visible on mobile (window.innerWidth <= 768) via JS
-# Uses window.location to trigger page change via query param
-# On mobile this replaces the sidebar entirely
-current_page = st.session_state.page
-
-# Read query param set by mobile nav
 qp = st.query_params
 if "p" in qp:
     requested = qp["p"].replace("+", " ")
-    if requested in pages and requested != st.session_state.page:
+    if requested in pages:
         st.session_state.page = requested
-        st.rerun()
 
-nav_items_html = ""
-for pg in pages:
-    icons_map = {"Home":"🏠","Risk Assessment":"⚡","My Results":"📊","Analytics":"📈","About":"ℹ️"}
-    labels_map = {"Home":"Home","Risk Assessment":"Assess","My Results":"Results","Analytics":"Analytics","About":"About"}
-    active = "active" if pg == current_page else ""
-    url = f"?p={pg.replace(' ', '+')}"
-    nav_items_html += f'''
-    <a href="{url}" class="{active}">
-        <span class="nav-icon">{icons_map[pg]}</span>
-        <span>{labels_map[pg]}</span>
-    </a>'''
+nav_items = ""
+for pg, icon, label in zip(pages, icons, labels):
+    active = "active" if st.session_state.page == pg else ""
+    nav_items += f'<a href="?p={pg.replace(" ","+")}" class="{active}"><span class="icon">{icon}</span><span class="label">{label}</span></a>'
 
-st.markdown(f"""
-<div id="mobile-nav-bar">
-    {nav_items_html}
-</div>
-<script>
-(function() {{
-    function checkWidth() {{
-        var nav = document.getElementById('mobile-nav-bar');
-        if (!nav) return;
-        if (window.innerWidth <= 768) {{
-            nav.style.display = 'flex';
-        }} else {{
-            nav.style.display = 'none';
-        }}
-    }}
-    checkWidth();
-    window.addEventListener('resize', checkWidth);
-    // Re-check after Streamlit rerenders
-    setTimeout(checkWidth, 500);
-    setTimeout(checkWidth, 1500);
-}})();
-</script>
-""", unsafe_allow_html=True)
+st.markdown(f'<div class="mobile-nav">{nav_items}</div>', unsafe_allow_html=True)
 
 # ── DESKTOP SIDEBAR ────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
     <div style="padding:28px 20px 16px;">
-        <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">⚡ Vitalis</div>
+        <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;"> Vitalis</div>
         <div style="font-size:11px;color:#6e6e73;margin-top:3px;letter-spacing:0.02em;text-transform:uppercase;">Injury Risk System</div>
     </div>
     <div style="height:1px;background:#3a3a3c;margin:0 20px 8px;"></div>
@@ -436,14 +401,14 @@ with st.sidebar:
 page = st.session_state.page
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # HOME
-# ══════════════════════════════════════════════════════════════════════════════
+
 if page == "Home":
     st.markdown("""
     <div style="background:#ffffff;padding:28px 24px;margin:-32px -32px 0 -32px;border-radius:0 0 20px 20px;">
         <div style="font-size:12px;font-weight:700;color:#0071e3;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">BDA6 Capstone · Polytechnics Mauritius</div>
-        <div style="font-size:34px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;line-height:1.1;margin-bottom:10px;">Know your risk before it becomes an injury.</div>
+        <div style="font-size:34px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;line-height:1.1;margin-bottom:10px;">Know the risk before it happens.</div>
         <div style="font-size:15px;color:#6e6e73;line-height:1.7;">Simple questions. Real-time machine learning. Personalised risk score.</div>
     </div>
     """, unsafe_allow_html=True)
@@ -505,9 +470,9 @@ if page == "Home":
         </div>""", unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # RISK ASSESSMENT
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "Risk Assessment":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">Risk Assessment</div>
@@ -640,6 +605,7 @@ elif page == "Risk Assessment":
         while len(rec_texts) < 3: rec_texts.append("")
 
         session_id = get_session_id()
+
         save_prediction({
             "name": str(name) if name else "Anonymous",
             "session_id": session_id,
@@ -704,9 +670,9 @@ elif page == "Risk Assessment":
         </div>""", unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # MY RESULTS
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "My Results":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">My Results</div>
@@ -766,9 +732,9 @@ elif page == "My Results":
         }), use_container_width=True, hide_index=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # ANALYTICS
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "Analytics":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">Analytics</div>
@@ -854,9 +820,9 @@ elif page == "Analytics":
         </div>""", unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # ABOUT
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "About":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">About Vitalis</div>
