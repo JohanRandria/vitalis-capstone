@@ -376,7 +376,7 @@ st.markdown(f'<div class="mobile-nav">{nav_items}</div>', unsafe_allow_html=True
 with st.sidebar:
     st.markdown("""
     <div style="padding:28px 20px 16px;">
-        <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">⚡ Vitalis</div>
+        <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;"> Vitalis</div>
         <div style="font-size:11px;color:#6e6e73;margin-top:3px;letter-spacing:0.02em;text-transform:uppercase;">Injury Risk System</div>
     </div>
     <div style="height:1px;background:#3a3a3c;margin:0 20px 8px;"></div>
@@ -401,14 +401,14 @@ with st.sidebar:
 page = st.session_state.page
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # HOME
-# ══════════════════════════════════════════════════════════════════════════════
+
 if page == "Home":
     st.markdown("""
     <div style="background:#ffffff;padding:28px 24px;margin:-32px -32px 0 -32px;border-radius:0 0 20px 20px;">
         <div style="font-size:12px;font-weight:700;color:#0071e3;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">BDA6 Capstone · Polytechnics Mauritius</div>
-        <div style="font-size:34px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;line-height:1.1;margin-bottom:10px;">Predict your injury risk before it happens.</div>
+        <div style="font-size:34px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;line-height:1.1;margin-bottom:10px;">Know your risk before it becomes an injury.</div>
         <div style="font-size:15px;color:#6e6e73;line-height:1.7;">Simple questions. Real-time machine learning. Personalised risk score.</div>
     </div>
     """, unsafe_allow_html=True)
@@ -433,9 +433,9 @@ if page == "Home":
     st.markdown("<br>", unsafe_allow_html=True)
     section_label("What Vitalis does")
     for icon, title, desc in [
-        ("⚡","Real-time prediction","Get your injury risk score instantly — no sports science knowledge needed."),
-        ("🔍","Explains why","SHAP analysis shows exactly which factors are driving your risk."),
-        ("📋","Tells you what to do","Personalised recommendations based on your specific data."),
+        ("1","Real-time prediction","Get your injury risk score instantly — no sports science knowledge needed."),
+        ("2","Explains why","SHAP analysis shows exactly which factors are driving your risk."),
+        ("3","Tells you what to do","Personalised recommendations based on your specific data."),
     ]:
         st.markdown(f"""<div style="background:#ffffff;border-radius:16px;padding:16px 18px;box-shadow:0 1px 8px rgba(0,0,0,0.07);margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;">
             <div style="font-size:22px;min-width:28px;padding-top:2px;">{icon}</div>
@@ -470,9 +470,9 @@ if page == "Home":
         </div>""", unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # RISK ASSESSMENT
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "Risk Assessment":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">Risk Assessment</div>
@@ -670,9 +670,9 @@ elif page == "Risk Assessment":
         </div>""", unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # MY RESULTS
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "My Results":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">My Results</div>
@@ -732,9 +732,9 @@ elif page == "My Results":
         }), use_container_width=True, hide_index=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # ANALYTICS
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "Analytics":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">Analytics</div>
@@ -820,9 +820,9 @@ elif page == "Analytics":
         </div>""", unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+
 # ABOUT
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "About":
     st.markdown("""<div style="margin-bottom:8px;">
         <div style="font-size:26px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em;">About Vitalis</div>
