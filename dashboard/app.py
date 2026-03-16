@@ -310,7 +310,7 @@ def divider():
 with st.sidebar:
     st.markdown("""
     <div style="padding:28px 20px 16px;">
-        <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">⚡ Vitalis</div>
+        <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.03em;">   Vitalis</div>
         <div style="font-size:11px;color:#6e6e73;margin-top:3px;letter-spacing:0.02em;text-transform:uppercase;">Injury Risk System</div>
     </div>
     <div style="height:1px;background:#3a3a3c;margin:0 20px 8px;"></div>
@@ -384,9 +384,9 @@ if page == "Home":
     section_label("What Vitalis does")
 
     for icon, title, desc in [
-        ("⚡", "Real-time prediction", "Get your injury risk score instantly — no sports science knowledge needed."),
-        ("🔍", "Explains why", "SHAP analysis shows exactly which factors are driving your risk."),
-        ("📋", "Tells you what to do", "Personalised recommendations based on your specific data."),
+        ("1", "Real-time prediction", "Get your injury risk score instantly — no sports science knowledge needed."),
+        ("2", "Explains why", "SHAP analysis shows exactly which factors are driving your risk."),
+        ("3", "Tells you what to do", "Personalised recommendations based on your specific data."),
     ]:
         st.markdown(f"""
         <div style="background:#ffffff;border-radius:16px;padding:18px 20px;box-shadow:0 1px 8px rgba(0,0,0,0.07);margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;">
@@ -401,7 +401,7 @@ if page == "Home":
     section_label("Key findings from our research")
 
     for color, stat, desc in [
-        ("#ff3b30", "100%", "injury rate when ACWR exceeds 1.5 — the most dangerous training pattern"),
+        ("#ff3b30", "100%", "injury rate when Acute Chronic Workload Ratio(ACWR) exceeds 1.5 — the most dangerous training pattern"),
         ("#ff9500", "41.1%", "injury rate sleeping under 6 hours vs 10.3% for those sleeping 8+"),
         ("#ff3b30", "47.8%", "injury rate with previous injuries vs only 6.7% for those without"),
     ]:
