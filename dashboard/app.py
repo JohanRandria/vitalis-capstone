@@ -202,25 +202,7 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
 }
 .vt-divider { height: 1px; background: #e8e8e8; margin: 20px 0; }
 
-/* ── DESKTOP: hide mobile nav completely ── */
-@media (min-width: 769px) {
-    .mobile-nav-container {
-        display: none !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        visibility: hidden !important;
-    }
-    .mobile-nav-container * {
-        display: none !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-}
-
-/* ── MOBILE: hide sidebar ── */
+/* ── MOBILE ── */
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
         display: none !important;
@@ -242,41 +224,43 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:f
     .stTextInput > div > div > input { min-height: 52px !important; }
     .vt-section { margin-top: 16px; }
     .vt-divider { margin: 16px 0; }
-
-    /* ── MOBILE BOTTOM NAV ── */
-    .mobile-nav-container {
-        display: block !important;
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 9999 !important;
-        background: #1d1d1f !important;
-        border-top: 1px solid #3a3a3c !important;
-        padding: 4px 0 !important;
-        padding-bottom: env(safe-area-inset-bottom) !important;
-        height: auto !important;
-        visibility: visible !important;
-    }
-    .mobile-nav-container .stButton > button {
-        background: transparent !important;
-        border: none !important;
-        color: #636366 !important;
-        font-size: 9px !important;
-        font-weight: 500 !important;
-        padding: 4px 2px !important;
-        min-height: 52px !important;
-        border-radius: 10px !important;
-        width: 100% !important;
-        line-height: 1.4 !important;
-        box-shadow: none !important;
-        letter-spacing: 0 !important;
-    }
-    .mobile-nav-container .stButton > button:hover {
-        background: rgba(255,255,255,0.08) !important;
-        color: #ffffff !important;
-    }
 }
+
+/* ── MOBILE BOTTOM NAV ── shown only on mobile via JS injection ── */
+#mobile-nav-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: #1d1d1f;
+    border-top: 1px solid #3a3a3c;
+    z-index: 9999;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+#mobile-nav-bar a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #636366;
+    text-decoration: none;
+    flex: 1;
+    padding: 6px 2px;
+    border-radius: 10px;
+    min-height: 44px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    gap: 3px;
+    transition: all 0.15s;
+    border: none;
+    background: none;
+}
+#mobile-nav-bar a.active { color: #ffffff; background: rgba(255,255,255,0.1); }
+#mobile-nav-bar a span.nav-icon { font-size: 20px; line-height: 1; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -373,23 +357,55 @@ if 'page' not in st.session_state:
 
 pages = ["Home", "Risk Assessment", "My Results", "Analytics", "About"]
 
-# ── MOBILE BOTTOM NAV ─────────────────────────────────────────────────────────
-# Wrapped in mobile-nav-container — hidden on desktop via CSS, visible on mobile
-st.markdown('<div class="mobile-nav-container">', unsafe_allow_html=True)
-nav_cols = st.columns(5)
-nav_data = [
-    ("🏠\nHome",      "Home"),
-    ("⚡\nAssess",    "Risk Assessment"),
-    ("📊\nResults",   "My Results"),
-    ("📈\nAnalytics", "Analytics"),
-    ("ℹ️\nAbout",     "About"),
-]
-for col, (label, pg) in zip(nav_cols, nav_data):
-    with col:
-        if st.button(label, key=f"mob_{pg}", use_container_width=True):
-            st.session_state.page = pg
-            st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
+# ── MOBILE BOTTOM NAV — pure HTML/JS, zero Streamlit elements ─────────────────
+# Only visible on mobile (window.innerWidth <= 768) via JS
+# Uses window.location to trigger page change via query param
+# On mobile this replaces the sidebar entirely
+current_page = st.session_state.page
+
+# Read query param set by mobile nav
+qp = st.query_params
+if "p" in qp:
+    requested = qp["p"].replace("+", " ")
+    if requested in pages and requested != st.session_state.page:
+        st.session_state.page = requested
+        st.rerun()
+
+nav_items_html = ""
+for pg in pages:
+    icons_map = {"Home":"🏠","Risk Assessment":"⚡","My Results":"📊","Analytics":"📈","About":"ℹ️"}
+    labels_map = {"Home":"Home","Risk Assessment":"Assess","My Results":"Results","Analytics":"Analytics","About":"About"}
+    active = "active" if pg == current_page else ""
+    url = f"?p={pg.replace(' ', '+')}"
+    nav_items_html += f'''
+    <a href="{url}" class="{active}">
+        <span class="nav-icon">{icons_map[pg]}</span>
+        <span>{labels_map[pg]}</span>
+    </a>'''
+
+st.markdown(f"""
+<div id="mobile-nav-bar">
+    {nav_items_html}
+</div>
+<script>
+(function() {{
+    function checkWidth() {{
+        var nav = document.getElementById('mobile-nav-bar');
+        if (!nav) return;
+        if (window.innerWidth <= 768) {{
+            nav.style.display = 'flex';
+        }} else {{
+            nav.style.display = 'none';
+        }}
+    }}
+    checkWidth();
+    window.addEventListener('resize', checkWidth);
+    // Re-check after Streamlit rerenders
+    setTimeout(checkWidth, 500);
+    setTimeout(checkWidth, 1500);
+}})();
+</script>
+""", unsafe_allow_html=True)
 
 # ── DESKTOP SIDEBAR ────────────────────────────────────────────────────────────
 with st.sidebar:
